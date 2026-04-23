@@ -1,0 +1,643 @@
+/* ============================================================
+   DONATION PAGE — Premium CSS
+   Aesthetic: Warm fintech — calm confidence, human warmth
+   Fonts: Fraunces (display) + Instrument Sans (body)
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Instrument+Sans:wght@400;500;600&display=swap');
+
+/* ── CSS Variables ─────────────────────────────────────────── */
+:root {
+  /* Surfaces */
+  --don-bg:           #f7f5f2;
+  --don-card:         #ffffff;
+  --don-card-inner:   #f9f8f6;
+  --don-elevated:     #ffffff;
+
+  /* Brand */
+  --don-accent:       #d4603a;        /* warm terracotta */
+  --don-accent-dim:   rgba(212,96,58,0.10);
+  --don-accent-glow:  rgba(212,96,58,0.22);
+  --don-accent-hover: #c0522d;
+
+  /* Semantic */
+  --don-success:      #2a9d6e;
+  --don-success-dim:  rgba(42,157,110,0.10);
+  --don-warning:      #c98d1a;
+
+  /* Borders */
+  --don-border:       rgba(0,0,0,0.08);
+  --don-border-md:    rgba(0,0,0,0.13);
+  --don-border-str:   rgba(0,0,0,0.20);
+
+  /* Text */
+  --don-text:         #1a1714;
+  --don-text2:        #5a5450;
+  --don-text3:        #9c948e;
+
+  /* Fonts */
+  --font-display:     'Fraunces', Georgia, serif;
+  --font-body:        'Instrument Sans', sans-serif;
+  --font-mono:        'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Radii */
+  --r-sm:    6px;
+  --r-md:    10px;
+  --r-lg:    16px;
+  --r-xl:    22px;
+  --r-pill:  999px;
+
+  /* Shadows */
+  --sh-card:    0 1px 4px rgba(0,0,0,0.07), 0 0 0 0.5px var(--don-border);
+  --sh-elev:    0 8px 32px rgba(0,0,0,0.10), 0 0 0 0.5px var(--don-border);
+  --sh-btn:     0 2px 12px var(--don-accent-glow);
+
+  /* Easing */
+  --ease:       cubic-bezier(0.2, 0, 0, 1);
+  --ease-pop:   cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ── Dark mode ─────────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --don-bg:           #111009;
+    --don-card:         #1a1814;
+    --don-card-inner:   #201e1a;
+    --don-elevated:     #242118;
+
+    --don-border:       rgba(255,255,255,0.07);
+    --don-border-md:    rgba(255,255,255,0.12);
+    --don-border-str:   rgba(255,255,255,0.20);
+
+    --don-text:         #ede9e3;
+    --don-text2:        #a09890;
+    --don-text3:        #635d57;
+
+    --sh-card:    0 1px 4px rgba(0,0,0,0.5), 0 0 0 0.5px var(--don-border);
+    --sh-elev:    0 8px 32px rgba(0,0,0,0.6), 0 0 0 0.5px var(--don-border);
+  }
+}
+
+/* ── Base ──────────────────────────────────────────────────── */
+.don-page {
+  font-family: var(--font-body);
+  background: var(--don-bg);
+  color: var(--don-text);
+  min-height: 100vh;
+  padding: 40px 20px 80px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Page Header ───────────────────────────────────────────── */
+.don-page-header {
+  text-align: center;
+  margin-bottom: 36px;
+}
+
+.don-page-title {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 700;
+  font-style: italic;
+  color: var(--don-text);
+  letter-spacing: -0.5px;
+  line-height: 1.2;
+  margin-bottom: 8px;
+}
+
+.don-page-title span {
+  color: var(--don-accent);
+}
+
+.don-page-sub {
+  font-size: 15px;
+  color: var(--don-text2);
+  font-weight: 400;
+  max-width: 420px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+/* ── Trust strip ───────────────────────────────────────────── */
+.don-trust-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.don-trust-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--don-text3);
+  font-weight: 500;
+}
+
+.don-trust-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--don-success);
+  flex-shrink: 0;
+}
+
+/* ── Layout ────────────────────────────────────────────────── */
+.don-layout {
+  display: grid;
+  grid-template-columns: 480px 360px;
+  gap: 24px;
+  max-width: 880px;
+  margin: 0 auto;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .don-layout { grid-template-columns: 1fr; max-width: 520px; }
+}
+
+@media (max-width: 600px) {
+  .don-page        { padding: 24px 16px 60px; }
+  .don-page-title  { font-size: 26px; }
+}
+
+/* ── Cards ─────────────────────────────────────────────────── */
+.don-card {
+  background: var(--don-card);
+  border-radius: var(--r-xl);
+  box-shadow: var(--sh-card);
+  border: 0.5px solid var(--don-border);
+  overflow: hidden;
+  transition: box-shadow 200ms var(--ease);
+}
+
+.don-card:hover { box-shadow: var(--sh-elev); }
+
+.don-card-body { padding: 28px; }
+
+.don-card-title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--don-text);
+  margin-bottom: 4px;
+  letter-spacing: -0.2px;
+}
+
+.don-card-desc {
+  font-size: 13px;
+  color: var(--don-text2);
+  margin-bottom: 22px;
+  line-height: 1.6;
+}
+
+/* ── Amount picker ─────────────────────────────────────────── */
+.don-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--don-text3);
+  margin-bottom: 10px;
+  display: block;
+}
+
+.don-amounts {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.don-amt-btn {
+  background: var(--don-card-inner);
+  border: 0.5px solid var(--don-border-md);
+  border-radius: var(--r-md);
+  padding: 11px 6px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--don-text2);
+  cursor: pointer;
+  transition: all 160ms var(--ease);
+  text-align: center;
+}
+
+.don-amt-btn:hover {
+  border-color: var(--don-accent);
+  color: var(--don-accent);
+  background: var(--don-accent-dim);
+}
+
+.don-amt-btn.selected {
+  background: var(--don-accent);
+  color: #fff;
+  border-color: var(--don-accent);
+  box-shadow: var(--sh-btn);
+  transform: scale(1.03);
+}
+
+.don-amt-btn:active { transform: scale(0.97); }
+
+/* ── Custom input + text input ─────────────────────────────── */
+.don-form-group { margin-bottom: 16px; }
+
+.don-custom-toggle {
+  background: none;
+  border: none;
+  color: var(--don-accent);
+  font-size: 12px;
+  font-family: var(--font-body);
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 8px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  opacity: 0.8;
+  transition: opacity 120ms;
+}
+
+.don-custom-toggle:hover { opacity: 1; }
+
+.don-input {
+  width: 100%;
+  background: var(--don-card-inner);
+  border: 0.5px solid var(--don-border-md);
+  border-radius: var(--r-md);
+  padding: 11px 14px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--don-text);
+  transition: border-color 140ms var(--ease), box-shadow 140ms var(--ease);
+  outline: none;
+}
+
+.don-input::placeholder { color: var(--don-text3); }
+
+.don-input:focus {
+  border-color: var(--don-accent);
+  box-shadow: 0 0 0 3px var(--don-accent-dim);
+}
+
+/* ── QR Section ────────────────────────────────────────────── */
+.don-qr-section {
+  background: var(--don-card-inner);
+  border: 0.5px solid var(--don-border);
+  border-radius: var(--r-lg);
+  padding: 20px;
+  text-align: center;
+  margin-bottom: 18px;
+}
+
+.don-qr-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--don-text3);
+  margin-bottom: 14px;
+}
+
+.don-qr-wrapper {
+  display: inline-block;
+  padding: 10px;
+  background: #ffffff;
+  border-radius: var(--r-md);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.10);
+  margin-bottom: 14px;
+  transition: transform 200ms var(--ease-pop);
+}
+
+.don-qr-wrapper:hover { transform: scale(1.03); }
+
+.don-qr-img {
+  display: block;
+  width: 150px;
+  height: 150px;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+/* Fallback placeholder (shown when no real QR src) */
+.don-qr-placeholder {
+  width: 150px;
+  height: 150px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--don-text3);
+  font-size: 11px;
+  font-family: var(--font-mono);
+  border-radius: 4px;
+  border: 1.5px dashed var(--don-border-md);
+}
+
+.don-qr-hint {
+  font-size: 12px;
+  color: var(--don-text2);
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
+
+.don-upi-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+}
+
+.don-upi-id {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--don-text);
+  background: var(--don-card);
+  border: 0.5px solid var(--don-border-md);
+  border-radius: var(--r-sm);
+  padding: 5px 10px;
+}
+
+.don-copy-btn {
+  background: var(--don-accent-dim);
+  border: 0.5px solid var(--don-accent-glow);
+  color: var(--don-accent);
+  border-radius: var(--r-sm);
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: background 140ms, transform 140ms var(--ease-pop);
+}
+
+.don-copy-btn:hover   { background: var(--don-accent); color: #fff; }
+.don-copy-btn:active  { transform: scale(0.95); }
+.don-copy-btn.copied  { background: var(--don-success-dim); color: var(--don-success); border-color: var(--don-success); }
+
+/* ── Primary CTA button ────────────────────────────────────── */
+.don-btn-primary {
+  width: 100%;
+  padding: 14px;
+  background: var(--don-accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--r-lg);
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 160ms, transform 160ms var(--ease), box-shadow 160ms;
+  box-shadow: var(--sh-btn);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.don-btn-primary:hover:not(:disabled) {
+  background: var(--don-accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px var(--don-accent-glow);
+}
+
+.don-btn-primary:active:not(:disabled) {
+  transform: scale(0.98);
+  transition-duration: 60ms;
+}
+
+.don-btn-primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.don-loading-dots span {
+  animation: blink 1.2s infinite;
+  opacity: 0;
+}
+.don-loading-dots span:nth-child(2) { animation-delay: .2s; }
+.don-loading-dots span:nth-child(3) { animation-delay: .4s; }
+@keyframes blink { 0%,80%,100%{opacity:0} 40%{opacity:1} }
+
+.don-btn-ghost {
+  width: 100%;
+  padding: 11px;
+  background: transparent;
+  color: var(--don-text2);
+  border: 0.5px solid var(--don-border-md);
+  border-radius: var(--r-lg);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 160ms var(--ease);
+  text-align: center;
+}
+
+.don-btn-ghost:hover {
+  background: var(--don-card-inner);
+  color: var(--don-text);
+  border-color: var(--don-border-str);
+}
+
+.don-disclaimer {
+  font-size: 11px;
+  color: var(--don-text3);
+  text-align: center;
+  margin-top: 12px;
+  line-height: 1.5;
+}
+
+/* ── Success state ─────────────────────────────────────────── */
+.don-success-state {
+  padding: 40px 28px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.don-success-icon {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: var(--don-success-dim);
+  border: 0.5px solid rgba(42,157,110,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  margin-bottom: 4px;
+  animation: popIn .4s var(--ease-pop) both;
+}
+
+@keyframes popIn {
+  from { transform: scale(0.5); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+.don-success-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--don-success);
+  font-style: italic;
+  letter-spacing: -0.3px;
+}
+
+.don-success-amount {
+  font-family: var(--font-display);
+  font-size: 38px;
+  font-weight: 700;
+  color: var(--don-text);
+  letter-spacing: -1px;
+}
+
+.don-payment-id-box {
+  background: var(--don-card-inner);
+  border: 0.5px solid var(--don-border-md);
+  border-radius: var(--r-md);
+  padding: 12px 18px;
+  width: 100%;
+  text-align: left;
+}
+
+.don-payment-id-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--don-text3);
+  margin-bottom: 4px;
+}
+
+.don-payment-id-val {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--don-text);
+  word-break: break-all;
+}
+
+/* ── History card ──────────────────────────────────────────── */
+.don-history-header {
+  padding: 20px 22px 0;
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--don-text);
+  letter-spacing: -0.2px;
+}
+
+.don-history-body { padding: 14px 22px 20px; }
+
+.don-history-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 0;
+  border-bottom: 0.5px solid var(--don-border);
+}
+
+.don-history-row:last-of-type { border-bottom: none; }
+
+.don-history-amount {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--don-text);
+  letter-spacing: -0.3px;
+  margin-bottom: 2px;
+}
+
+.don-history-meta {
+  font-size: 11px;
+  color: var(--don-text3);
+}
+
+.don-badge-done {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  background: var(--don-success-dim);
+  color: var(--don-success);
+  border: 0.5px solid rgba(42,157,110,0.2);
+  border-radius: var(--r-pill);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.don-history-total {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 0.5px solid var(--don-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.don-total-label { font-size: 12px; color: var(--don-text2); }
+
+.don-total-value {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--don-accent);
+  letter-spacing: -0.5px;
+}
+
+/* ── Empty + skeleton ──────────────────────────────────────── */
+.don-empty {
+  padding: 32px 22px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.don-empty-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--don-card-inner);
+  border: 0.5px solid var(--don-border-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  margin-bottom: 4px;
+}
+
+.don-empty-text { font-size: 14px; font-weight: 500; color: var(--don-text); }
+.don-empty-sub  { font-size: 12px; color: var(--don-text3); }
+
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+}
+
+.don-skeleton {
+  border-radius: var(--r-md);
+  background: linear-gradient(90deg, var(--don-card-inner) 25%, rgba(128,128,128,0.07) 50%, var(--don-card-inner) 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s infinite ease-in-out;
+}
+
+/* ── Entrance animations ───────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.don-animate { animation: fadeUp 0.35s var(--ease) both; }
+.don-d1 { animation-delay: 0.04s; }
+.don-d2 { animation-delay: 0.10s; }
+.don-d3 { animation-delay: 0.16s; }

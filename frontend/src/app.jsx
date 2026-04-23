@@ -1,27 +1,44 @@
+// src/app.jsx
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 
 import Sidebar from "./components/Sidebar";
+import ThemeToggle from "./components/ThemeToggle";
 
 // Pages
-import LandingPage from "./pages/landing"; // 👈 your landing file
-import LoginPage from "./pages/LoginPage";
-import SignupPage from "./pages/SignupPage";
-import DashboardPage from "./pages/DashboardPage";
-import IssuesPage from "./pages/IssuesPage";
+import LandingPage    from "./pages/landing";
+import LoginPage      from "./pages/LoginPage";
+import SignupPage     from "./pages/SignupPage";
+import DashboardPage  from "./pages/DashboardPage";
+import IssuesPage     from "./pages/IssuesPage";
 import IssueDetailPage from "./pages/IssueDetailPage";
 import VolunteerPanel from "./pages/VolunteerPanel";
-import MapPage from "./pages/MapPage";
-import DonationPage from "./pages/DonationPage";
+import MapPage        from "./pages/MapPage";
+import DonationPage   from "./pages/DonationPage";
 
 import "./index.css";
 
 
-// ================= ROUTE GUARDS =================
+// ── Theme bootstrap ──────────────────────────────────────────────────────────
+//    Runs synchronously BEFORE React mounts so there is zero flash of
+//    wrong theme. Reads localStorage; falls back to OS preference.
+(function initTheme() {
+  try {
+    const saved      = localStorage.getItem("sahay-theme");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const isDark      = saved !== null ? saved === "dark" : prefersDark;
+    document.body.classList.add(isDark ? "dark" : "light");
+  } catch (_) {
+    // localStorage unavailable (private browsing edge case) — default dark
+    document.body.classList.add("dark");
+  }
+})();
 
-// Private (Protected)
+
+// ── Route Guards ─────────────────────────────────────────────────────────────
+
 const PrivateRoute = ({ children, roles }) => {
   const { user, loading } = useAuth();
 
@@ -42,7 +59,6 @@ const PrivateRoute = ({ children, roles }) => {
   return children;
 };
 
-// Public (Login/Signup only)
 const PublicRoute = ({ children }) => {
   const { user } = useAuth();
   if (user) return <Navigate to="/dashboard" replace />;
@@ -50,7 +66,7 @@ const PublicRoute = ({ children }) => {
 };
 
 
-// ================= LAYOUT =================
+// ── App Layout ────────────────────────────────────────────────────────────────
 
 const AppLayout = ({ children }) => (
   <div className="app-shell">
@@ -59,110 +75,71 @@ const AppLayout = ({ children }) => (
   </div>
 );
 
+// Wrapper for auth pages (Login / Signup) that adds the floating ThemeToggle
+const AuthLayout = ({ children }) => (
+  <div style={{ position: "relative" }}>
+    {/* Floating theme toggle in top-right corner */}
+    <div className="auth-theme-toggle">
+      <ThemeToggle />
+    </div>
+    {children}
+  </div>
+);
 
-// ================= ROUTES =================
+
+// ── Routes ────────────────────────────────────────────────────────────────────
 
 const AppRoutes = () => (
   <Routes>
 
-    {/* ✅ LANDING PAGE (MAIN ENTRY) */}
+    {/* Landing */}
     <Route path="/" element={<LandingPage />} />
 
-    {/* ✅ PUBLIC ROUTES */}
-    <Route
-      path="/login"
-      element={
-        <PublicRoute>
-          <LoginPage />
-        </PublicRoute>
-      }
-    />
+    {/* Public — wrapped in AuthLayout for theme toggle */}
+    <Route path="/login"  element={
+      <PublicRoute>
+        <AuthLayout><LoginPage /></AuthLayout>
+      </PublicRoute>
+    } />
+    <Route path="/signup" element={
+      <PublicRoute>
+        <AuthLayout><SignupPage /></AuthLayout>
+      </PublicRoute>
+    } />
 
-    <Route
-      path="/signup"
-      element={
-        <PublicRoute>
-          <SignupPage />
-        </PublicRoute>
-      }
-    />
+    {/* Protected */}
+    <Route path="/dashboard" element={
+      <PrivateRoute><AppLayout><DashboardPage /></AppLayout></PrivateRoute>
+    } />
 
-    {/* 🔐 PROTECTED ROUTES */}
+    <Route path="/issues" element={
+      <PrivateRoute><AppLayout><IssuesPage /></AppLayout></PrivateRoute>
+    } />
 
-    <Route
-      path="/dashboard"
-      element={
-        <PrivateRoute>
-          <AppLayout>
-            <DashboardPage />
-          </AppLayout>
-        </PrivateRoute>
-      }
-    />
+    <Route path="/issues/:id" element={
+      <PrivateRoute><AppLayout><IssueDetailPage /></AppLayout></PrivateRoute>
+    } />
 
-    <Route
-      path="/issues"
-      element={
-        <PrivateRoute>
-          <AppLayout>
-            <IssuesPage />
-          </AppLayout>
-        </PrivateRoute>
-      }
-    />
+    <Route path="/volunteer" element={
+      <PrivateRoute roles={["volunteer"]}><AppLayout><VolunteerPanel /></AppLayout></PrivateRoute>
+    } />
 
-    <Route
-      path="/issues/:id"
-      element={
-        <PrivateRoute>
-          <AppLayout>
-            <IssueDetailPage />
-          </AppLayout>
-        </PrivateRoute>
-      }
-    />
+    <Route path="/map" element={
+      <PrivateRoute><AppLayout><MapPage /></AppLayout></PrivateRoute>
+    } />
 
-    <Route
-      path="/volunteer"
-      element={
-        <PrivateRoute roles={["volunteer"]}>
-          <AppLayout>
-            <VolunteerPanel />
-          </AppLayout>
-        </PrivateRoute>
-      }
-    />
+    <Route path="/donate" element={
+      <PrivateRoute><AppLayout><DonationPage /></AppLayout></PrivateRoute>
+    } />
 
-    <Route
-      path="/map"
-      element={
-        <PrivateRoute>
-          <AppLayout>
-            <MapPage />
-          </AppLayout>
-        </PrivateRoute>
-      }
-    />
-
-    <Route
-      path="/donate"
-      element={
-        <PrivateRoute>
-          <AppLayout>
-            <DonationPage />
-          </AppLayout>
-        </PrivateRoute>
-      }
-    />
-
-    {/* ❌ OPTIONAL: fallback */}
+    {/* Fallback */}
     <Route path="*" element={<Navigate to="/" replace />} />
 
   </Routes>
 );
 
 
-// ================= MAIN APP =================
+// ── Main App ──────────────────────────────────────────────────────────────────
 
 export default function App() {
   return (
@@ -177,12 +154,13 @@ export default function App() {
               border: "1px solid var(--border2)",
               fontFamily: "var(--font-body)",
               fontSize: "14px",
+              boxShadow: "var(--shadow-md)",
             },
             success: {
-              iconTheme: { primary: "#4ecf82", secondary: "#0a0a0a" },
+              iconTheme: { primary: "#4ecf82", secondary: "var(--bg2)" },
             },
             error: {
-              iconTheme: { primary: "#e87070", secondary: "#0a0a0a" },
+              iconTheme: { primary: "#e87070", secondary: "var(--bg2)" },
             },
           }}
         />

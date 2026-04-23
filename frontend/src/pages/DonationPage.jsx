@@ -2,17 +2,58 @@ import React, { useState, useEffect } from "react";
 import { donationsAPI } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import toast from "react-hot-toast";
+import "./DonationPage.css";
+
+// ─────────────────────────────────────────────────────────────
+// 👇 SWAP THIS with your actual QR image path or import
+//    e.g. import qrImage from "../assets/upi-qr.png"
+//    or:  const QR_IMAGE_SRC = "/assets/upi-qr.png";
+// ─────────────────────────────────────────────────────────────
+const QR_IMAGE_SRC = "/assests/upi-qr.png"; // ← replace null with your image src string
+
+const UPI_ID = "sahay@upi"; // ← replace with your real UPI ID
 
 const AMOUNTS = [100, 500, 1000, 5000];
 
+function timeAgo(dateStr) {
+  const diff  = Date.now() - new Date(dateStr).getTime();
+  const days  = Math.floor(diff / 86_400_000);
+  const hours = Math.floor(diff / 3_600_000);
+  if (days  === 1) return "yesterday";
+  if (days  >  1) return `${days}d ago`;
+  if (hours >= 1) return `${hours}h ago`;
+  return "just now";
+}
+
+/* ── Copy UPI ID with feedback ───────────────────────────── */
+function CopyUpiButton({ upiId }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    navigator.clipboard.writeText(upiId).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+  return (
+    <button
+      type="button"
+      className={`don-copy-btn ${copied ? "copied" : ""}`}
+      onClick={handleCopy}
+    >
+      {copied ? "✓ Copied" : "Copy"}
+    </button>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════ */
 export default function DonationPage() {
   const { user } = useAuth();
-  const [amount, setAmount]     = useState("");
-  const [custom, setCustom]     = useState(false);
-  const [message, setMessage]   = useState("");
-  const [loading, setLoading]   = useState(false);
-  const [success, setSuccess]   = useState(null);
-  const [history, setHistory]   = useState([]);
+  const [amount,         setAmount]         = useState("");
+  const [custom,         setCustom]         = useState(false);
+  const [message,        setMessage]        = useState("");
+  const [loading,        setLoading]        = useState(false);
+  const [success,        setSuccess]        = useState(null);
+  const [history,        setHistory]        = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
 
   useEffect(() => {
@@ -31,208 +72,252 @@ export default function DonationPage() {
     setLoading(true);
     try {
       const { data } = await donationsAPI.create({
-        amount: parseFloat(amount),
+        amount:    parseFloat(amount),
         donorName: user?.name,
         message,
       });
       setSuccess(data.donation);
-      toast.success("Donation successful! 🙏");
+      toast.success("Donation successful — thank you! 🙏");
       setAmount("");
       setMessage("");
       setCustom(false);
-    } catch (e) {
-      toast.error(e.response?.data?.message || "Donation failed");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Donation failed");
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <div>
-      <h1 className="page-title">Donate</h1>
-      <p className="page-subtitle">Your contribution directly funds relief operations</p>
+  const selectAmount = (a) => { setAmount(String(a)); setCustom(false); };
 
-      <div className="grid-2" style={{ gap: 32, alignItems: "start" }}>
-        {/* Donation Form */}
-        <div>
+  return (
+    <div className="don-page">
+      {/* ── Page header ────────────────────────────────────── */}
+      <div className="don-page-header don-animate">
+        <h1 className="don-page-title">
+          Support the <span>Relief Fund</span>
+        </h1>
+        <p className="don-page-sub">
+          Your contribution directly funds on-ground relief operations and
+          helps resolve critical civic issues faster.
+        </p>
+        <div className="don-trust-strip">
+          <span className="don-trust-item">
+            <span className="don-trust-dot" />
+            Secure payments
+          </span>
+          <span className="don-trust-item">
+            <span className="don-trust-dot" />
+            100% goes to relief
+          </span>
+          <span className="don-trust-item">
+            <span className="don-trust-dot" />
+            Instant confirmation
+          </span>
+        </div>
+      </div>
+
+      {/* ── Two-column layout ──────────────────────────────── */}
+      <div className="don-layout">
+
+        {/* ── LEFT: Form card ──────────────────────────────── */}
+        <div className="don-d1 don-animate">
           {success ? (
-            <div className="card" style={{ textAlign: "center", padding: 40 }}>
-              <div style={{ fontSize: 48, marginBottom: 16 }}>🙏</div>
-              <h2 className="section-title" style={{ color: "var(--green)", marginBottom: 8 }}>
-                Thank You!
-              </h2>
-              <p className="text-muted mb-16">
-                ₹{success.amount} donated successfully
-              </p>
-              <div style={{
-                background: "var(--bg3)",
-                border: "1px solid var(--border)",
-                borderRadius: "var(--radius)",
-                padding: "12px 16px",
-                marginBottom: 24,
-              }}>
-                <div className="form-label" style={{ marginBottom: 4 }}>Payment ID</div>
-                <span className="text-mono" style={{ fontSize: 11 }}>{success.paymentId}</span>
+            /* ── Success state ─────────────────────────────── */
+            <div className="don-card">
+              <div className="don-success-state">
+                <div className="don-success-icon">🙏</div>
+                <div className="don-success-title">Thank you!</div>
+                <div className="don-success-amount">
+                  ₹{success.amount.toLocaleString("en-IN")}
+                </div>
+                <p style={{ fontSize:13, color:"var(--don-text2)", margin:0 }}>
+                  donated successfully
+                </p>
+                <div className="don-payment-id-box" style={{ marginTop:8 }}>
+                  <div className="don-payment-id-label">Payment Reference</div>
+                  <div className="don-payment-id-val">{success.paymentId}</div>
+                </div>
+                <button
+                  className="don-btn-ghost"
+                  style={{ marginTop:8 }}
+                  onClick={() => setSuccess(null)}
+                >
+                  ← Donate again
+                </button>
               </div>
-              <button
-                className="btn btn-ghost"
-                onClick={() => setSuccess(null)}
-              >
-                Donate Again
-              </button>
             </div>
           ) : (
-            <div className="card">
-              <h3 className="section-title">Make a Contribution</h3>
+            /* ── Donation form ─────────────────────────────── */
+            <div className="don-card">
+              <div className="don-card-body">
+                <div className="don-card-title">Make a Contribution</div>
+                <div className="don-card-desc">
+                  Choose an amount and scan the QR code with any UPI app — PhonePe,
+                  GPay, Paytm, or your bank app.
+                </div>
 
-              {/* Quick amounts */}
-              <div className="form-label" style={{ marginBottom: 8 }}>Select Amount</div>
-              <div className="grid-4 mb-16" style={{ gap: 8 }}>
-                {AMOUNTS.map((a) => (
-                  <button
-                    key={a}
-                    type="button"
-                    onClick={() => { setAmount(String(a)); setCustom(false); }}
-                    className="btn"
-                    style={{
-                      justifyContent: "center",
-                      background: String(amount) === String(a) && !custom
-                        ? "var(--accent)" : "var(--bg3)",
-                      color: String(amount) === String(a) && !custom
-                        ? "#0a0a0a" : "var(--text2)",
-                      border: "1px solid var(--border2)",
-                      fontFamily: "var(--font-mono)",
-                      fontSize: 13,
-                    }}
-                  >
-                    ₹{a}
-                  </button>
-                ))}
-              </div>
+                {/* Amount picker */}
+                <div className="don-form-group">
+                  <span className="don-label">Select Amount</span>
+                  <div className="don-amounts">
+                    {AMOUNTS.map((a) => (
+                      <button
+                        key={a}
+                        type="button"
+                        className={`don-amt-btn ${String(amount) === String(a) && !custom ? "selected" : ""}`}
+                        onClick={() => selectAmount(a)}
+                      >
+                        ₹{a.toLocaleString("en-IN")}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-              <div className="form-group">
-                <label className="form-label">
-                  Custom Amount
-                  <button
-                    type="button"
-                    onClick={() => { setCustom(true); setAmount(""); }}
-                    style={{ marginLeft: 8, color: "var(--accent)", fontSize: 10, fontFamily: "var(--font-mono)" }}
-                  >
-                    Enter Custom
-                  </button>
-                </label>
-                {custom && (
+                {/* Custom amount */}
+                <div className="don-form-group">
+                  <span className="don-label">
+                    Custom
+                    <button
+                      type="button"
+                      className="don-custom-toggle"
+                      onClick={() => { setCustom(true); setAmount(""); }}
+                    >
+                      Enter custom amount
+                    </button>
+                  </span>
+                  {custom && (
+                    <input
+                      className="don-input"
+                      type="number"
+                      min="1"
+                      placeholder="₹ Enter amount"
+                      value={amount}
+                      onChange={e => setAmount(e.target.value)}
+                      autoFocus
+                    />
+                  )}
+                </div>
+
+                {/* Message */}
+                <div className="don-form-group">
+                  <span className="don-label">Message (optional)</span>
                   <input
-                    className="form-input"
-                    type="number"
-                    min="1"
-                    placeholder="Enter amount in ₹"
-                    value={amount}
-                    onChange={e => setAmount(e.target.value)}
-                    autoFocus
+                    className="don-input"
+                    placeholder="A word of support…"
+                    value={message}
+                    onChange={e => setMessage(e.target.value)}
                   />
-                )}
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Message (optional)</label>
-                <input
-                  className="form-input"
-                  placeholder="A message of support…"
-                  value={message}
-                  onChange={e => setMessage(e.target.value)}
-                />
-              </div>
-
-              {/* PhonePe QR placeholder */}
-              <div style={{
-                background: "var(--bg3)",
-                border: "1px solid var(--border)",
-                borderRadius: "var(--radius)",
-                padding: 16,
-                textAlign: "center",
-                marginBottom: 16,
-              }}>
-                <div className="form-label" style={{ marginBottom: 8 }}>
-                  Scan to Pay via PhonePe / UPI
                 </div>
-                {/* QR placeholder box */}
-                <div style={{
-                  width: 140, height: 140,
-                  margin: "0 auto 8px",
-                  background: "white",
-                  borderRadius: 8,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  color: "#333", fontSize: 11, fontFamily: "var(--font-mono)",
-                  border: "2px solid var(--border2)",
-                }}>
-                  QR CODE<br/>PLACEHOLDER
+
+                {/* QR Section */}
+                <div className="don-qr-section">
+                  <div className="don-qr-label">Scan &amp; Pay via UPI</div>
+
+                  <div className="don-qr-wrapper">
+                    {QR_IMAGE_SRC ? (
+                      <img
+                        src={QR_IMAGE_SRC}
+                        alt="UPI QR code for donation"
+                        className="don-qr-img"
+                      />
+                    ) : (
+                      /* Placeholder — remove once QR_IMAGE_SRC is set */
+                      <div className="don-qr-placeholder">
+                        <span style={{ fontSize:32 }}>▦</span>
+                        <span>Your QR here</span>
+                        <span style={{ fontSize:9 }}>set QR_IMAGE_SRC</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <p className="don-qr-hint">
+                    Open PhonePe, GPay, or any UPI app → Scan QR
+                  </p>
+
+                  <div className="don-upi-row">
+                    <span className="don-upi-id">{UPI_ID}</span>
+                    <CopyUpiButton upiId={UPI_ID} />
+                  </div>
                 </div>
-                <p className="text-xs text-muted">
-                  UPI ID: sahay@upi (replace with real UPI ID)
+
+                {/* CTA */}
+                <button
+                  className="don-btn-primary"
+                  onClick={handleDonate}
+                  disabled={loading || !amount}
+                >
+                  {loading ? (
+                    <>
+                      Processing
+                      <span className="don-loading-dots">
+                        <span>.</span><span>.</span><span>.</span>
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      ◆ Confirm Donation
+                      {amount ? ` · ₹${parseFloat(amount).toLocaleString("en-IN")}` : ""}
+                    </>
+                  )}
+                </button>
+
+                <p className="don-disclaimer">
+                  Simulated payment for demo purposes. No real transaction occurs.
                 </p>
               </div>
-
-              <button
-                className="btn btn-primary"
-                onClick={handleDonate}
-                disabled={loading || !amount}
-                style={{ width: "100%", justifyContent: "center" }}
-              >
-                {loading ? "Processing…" : `Donate ₹${amount || "—"}`}
-              </button>
-
-              <p className="text-xs text-muted" style={{ marginTop: 12, textAlign: "center" }}>
-                This is a simulated payment for demo purposes.
-              </p>
             </div>
           )}
         </div>
 
-        {/* Donation History */}
-        <div>
-          <h2 className="section-title">Your Donation History</h2>
-          <div className="card">
-            {loadingHistory ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {[1,2].map(i => <div key={i} className="skeleton" style={{ height: 60 }} />)}
-              </div>
-            ) : history.length === 0 ? (
-              <div className="empty-state" style={{ padding: "24px 0" }}>
-                <div className="empty-icon" style={{ fontSize: 28 }}>◆</div>
-                <p className="empty-text">No donations yet</p>
-                <p className="empty-sub">Your contributions will appear here</p>
-              </div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-                {history.map((d, i) => (
-                  <div key={d._id} style={{
-                    padding: "14px 0",
-                    borderBottom: i < history.length - 1 ? "1px solid var(--border)" : "none",
-                    display: "flex", alignItems: "center", justifyContent: "space-between",
-                  }}>
-                    <div>
-                      <div style={{ fontWeight: 500, marginBottom: 2 }}>₹{d.amount}</div>
-                      <div className="text-xs text-muted">
-                        {new Date(d.createdAt).toLocaleDateString("en-IN")}
-                        {d.message && ` · "${d.message}"`}
-                      </div>
-                    </div>
-                    <span className="badge badge-completed">{d.status}</span>
-                  </div>
-                ))}
-                <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted">Total donated</span>
-                    <span style={{ fontFamily: "var(--font-head)", fontWeight: 700, fontSize: 18, color: "var(--accent)" }}>
-                      ₹{history.reduce((s, d) => s + d.amount, 0).toLocaleString()}
-                    </span>
+        {/* ── RIGHT: History card ───────────────────────────── */}
+        <div className="don-d2 don-animate">
+          <div className="don-card">
+            <div className="don-history-header">Your Donations</div>
+            <div className="don-history-body">
+              {loadingHistory ? (
+                <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+                  {[1,2,3].map(i => (
+                    <div key={i} className="don-skeleton" style={{ height:52 }} />
+                  ))}
+                </div>
+              ) : history.length === 0 ? (
+                <div className="don-empty">
+                  <div className="don-empty-icon">◆</div>
+                  <div className="don-empty-text">No donations yet</div>
+                  <div className="don-empty-sub">
+                    Your contributions will appear here
                   </div>
                 </div>
-              </div>
-            )}
+              ) : (
+                <>
+                  {history.map((d) => (
+                    <div key={d._id} className="don-history-row">
+                      <div>
+                        <div className="don-history-amount">
+                          ₹{d.amount.toLocaleString("en-IN")}
+                        </div>
+                        <div className="don-history-meta">
+                          {timeAgo(d.createdAt)}
+                          {d.message && ` · "${d.message}"`}
+                        </div>
+                      </div>
+                      <span className="don-badge-done">✓ {d.status}</span>
+                    </div>
+                  ))}
+
+                  <div className="don-history-total">
+                    <span className="don-total-label">Total contributed</span>
+                    <span className="don-total-value">
+                      ₹{history.reduce((s, d) => s + d.amount, 0).toLocaleString("en-IN")}
+                    </span>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
+
       </div>
     </div>
   );
