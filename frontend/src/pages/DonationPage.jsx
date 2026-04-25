@@ -21,7 +21,7 @@ function timeAgo(dateStr) {
   const hours = Math.floor(diff / 3_600_000);
   if (days  === 1) return "yesterday";
   if (days  >  1) return `${days}d ago`;
-  if (hours >= 1) return `${hours}h ago`;
+  if (hours >= 1) return `${hours}h ago`; 
   return "just now";
 }
 

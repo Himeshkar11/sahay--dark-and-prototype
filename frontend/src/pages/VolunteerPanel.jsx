@@ -1,16 +1,32 @@
 import React, { useEffect, useState } from "react";
+import { MapContainer, TileLayer, Marker } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import { assignmentsAPI, usersAPI } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import toast from "react-hot-toast";
+import LocationPicker from "../components/LocationPicker";
+
+// Fix default Leaflet marker icon broken by webpack
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+});
 
 export default function VolunteerPanel() {
-  const { user }  = useAuth();
+  const { user } = useAuth();
   const [assignments, setAssignments] = useState([]);
-  const [profile, setProfile]   = useState(null);
-  const [loading, setLoading]   = useState(true);
-  const [editing, setEditing]   = useState(false);
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(false);
+
+  // Location stored as { lat, lng } | null — mirrors LocationPicker's contract
   const [profileForm, setProfileForm] = useState({
-    skills: [], availability: false, location: { lat: "", lng: "" }
+    skills: [],
+    availability: false,
+    location: null,
   });
   const [saving, setSaving] = useState(false);
 
@@ -23,13 +39,18 @@ export default function VolunteerPanel() {
       ]);
       setAssignments(aRes.data);
       setProfile(pRes.data);
+
+      const existingLat = pRes.data.location?.lat;
+      const existingLng = pRes.data.location?.lng;
+
       setProfileForm({
-        skills:       pRes.data.skills || [],
+        skills: pRes.data.skills || [],
         availability: pRes.data.availability || false,
-        location: {
-          lat: pRes.data.location?.lat || "",
-          lng: pRes.data.location?.lng || "",
-        },
+        // Pre-fill picker with existing location if present
+        location:
+          existingLat && existingLng
+            ? { lat: existingLat, lng: existingLng }
+            : null,
       });
     } catch (e) {
       toast.error("Failed to load");
@@ -51,23 +72,43 @@ export default function VolunteerPanel() {
   };
 
   const toggleSkill = (skill) => {
-    setProfileForm(p => ({
+    setProfileForm((p) => ({
       ...p,
       skills: p.skills.includes(skill)
-        ? p.skills.filter(s => s !== skill)
+        ? p.skills.filter((s) => s !== skill)
         : [...p.skills, skill],
     }));
   };
 
+  const handleCancelEdit = () => {
+    // Reset form back to persisted profile values
+    const existingLat = profile?.location?.lat;
+    const existingLng = profile?.location?.lng;
+    setProfileForm({
+      skills: profile?.skills || [],
+      availability: profile?.availability || false,
+      location:
+        existingLat && existingLng
+          ? { lat: existingLat, lng: existingLng }
+          : null,
+    });
+    setEditing(false);
+  };
+
   const saveProfile = async () => {
+    if (!profileForm.location) {
+      toast.error("Please select a location");
+      return;
+    }
+
     setSaving(true);
     try {
       const payload = {
         skills: profileForm.skills,
         availability: profileForm.availability,
         location: {
-          lat: parseFloat(profileForm.location.lat) || null,
-          lng: parseFloat(profileForm.location.lng) || null,
+          lat: profileForm.location.lat,
+          lng: profileForm.location.lng,
         },
       };
       await usersAPI.updateProfile(payload);
@@ -81,15 +122,20 @@ export default function VolunteerPanel() {
     }
   };
 
-  if (loading) return (
-    <div>
-      <div className="skeleton" style={{ height: 36, width: 220, marginBottom: 32 }} />
-      <div className="grid-2" style={{ gap: 24 }}>
-        <div className="skeleton" style={{ height: 200 }} />
-        <div className="skeleton" style={{ height: 200 }} />
+  if (loading)
+    return (
+      <div>
+        <div className="skeleton" style={{ height: 36, width: 220, marginBottom: 32 }} />
+        <div className="grid-2" style={{ gap: 24 }}>
+          <div className="skeleton" style={{ height: 200 }} />
+          <div className="skeleton" style={{ height: 200 }} />
+        </div>
       </div>
-    </div>
-  );
+    );
+
+  const viewLat = profile?.location?.lat;
+  const viewLng = profile?.location?.lng;
+  const hasLocation = Boolean(viewLat && viewLng);
 
   return (
     <div>
@@ -101,7 +147,7 @@ export default function VolunteerPanel() {
           </span>
           <button
             className="btn btn-ghost btn-sm"
-            onClick={() => setEditing(!editing)}
+            onClick={editing ? handleCancelEdit : () => setEditing(true)}
           >
             {editing ? "Cancel" : "Edit Profile"}
           </button>
@@ -115,12 +161,13 @@ export default function VolunteerPanel() {
           <h3 className="section-title">My Profile</h3>
 
           {!editing ? (
+            /* ── VIEW MODE ── */
             <div>
               <div className="form-group" style={{ marginBottom: 12 }}>
                 <div className="form-label">Skills</div>
                 <div className="flex gap-8" style={{ flexWrap: "wrap", marginTop: 4 }}>
                   {profile?.skills?.length ? (
-                    profile.skills.map(s => (
+                    profile.skills.map((s) => (
                       <span key={s} className={`badge badge-${s}`}>{s}</span>
                     ))
                   ) : (
@@ -136,23 +183,72 @@ export default function VolunteerPanel() {
                 </span>
               </div>
 
+              {/* Location — map preview or fallback */}
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <div className="form-label">Location</div>
-                {profile?.location?.lat ? (
-                  <span className="text-mono">
-                    {profile.location.lat}, {profile.location.lng}
-                  </span>
+                {hasLocation ? (
+                  <div style={{ marginTop: 6 }}>
+                    {/* Small map preview */}
+                    <div
+                      style={{
+                        height: 180,
+                        borderRadius: "var(--radius, 6px)",
+                        overflow: "hidden",
+                        border: "1px solid var(--border, #ddd)",
+                        marginBottom: 8,
+                      }}
+                    >
+                      <MapContainer
+                        center={[viewLat, viewLng]}
+                        zoom={14}
+                        style={{ height: "100%", width: "100%" }}
+                        scrollWheelZoom={false}
+                        dragging={false}
+                        zoomControl={false}
+                        attributionControl={false}
+                      >
+                        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                        <Marker position={[viewLat, viewLng]} />
+                      </MapContainer>
+                    </div>
+                    {/* Coordinate readout */}
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: 16,
+                        padding: "7px 11px",
+                        background: "var(--bg3, #f5f5f5)",
+                        borderRadius: "var(--radius, 6px)",
+                        border: "1px solid var(--border, #ddd)",
+                        fontSize: 12,
+                      }}
+                    >
+                      <span>
+                        <span style={{ color: "var(--text2)", marginRight: 4 }}>Lat:</span>
+                        <span style={{ fontFamily: "var(--font-mono, monospace)", fontWeight: 500 }}>
+                          {viewLat.toFixed(6)}
+                        </span>
+                      </span>
+                      <span>
+                        <span style={{ color: "var(--text2)", marginRight: 4 }}>Lng:</span>
+                        <span style={{ fontFamily: "var(--font-mono, monospace)", fontWeight: 500 }}>
+                          {viewLng.toFixed(6)}
+                        </span>
+                      </span>
+                    </div>
+                  </div>
                 ) : (
-                  <span className="text-sm text-muted">Not set</span>
+                  <span className="text-sm text-muted">No location set</span>
                 )}
               </div>
             </div>
           ) : (
+            /* ── EDIT MODE ── */
             <div>
               <div className="form-group">
                 <label className="form-label">Skills (select all that apply)</label>
                 <div className="flex gap-8" style={{ marginTop: 4 }}>
-                  {["food", "medical", "education"].map(skill => (
+                  {["food", "medical", "education"].map((skill) => (
                     <button
                       key={skill}
                       type="button"
@@ -178,7 +274,9 @@ export default function VolunteerPanel() {
                     type="checkbox"
                     id="avail"
                     checked={profileForm.availability}
-                    onChange={e => setProfileForm(p => ({ ...p, availability: e.target.checked }))}
+                    onChange={(e) =>
+                      setProfileForm((p) => ({ ...p, availability: e.target.checked }))
+                    }
                     style={{ width: 16, height: 16, accentColor: "var(--accent)" }}
                   />
                   <label htmlFor="avail" className="text-sm">
@@ -187,29 +285,16 @@ export default function VolunteerPanel() {
                 </div>
               </div>
 
-              <div className="grid-2">
-                <div className="form-group">
-                  <label className="form-label">Latitude</label>
-                  <input
-                    className="form-input"
-                    type="number"
-                    step="any"
-                    placeholder="13.0827"
-                    value={profileForm.location.lat}
-                    onChange={e => setProfileForm(p => ({ ...p, location: { ...p.location, lat: e.target.value } }))}
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Longitude</label>
-                  <input
-                    className="form-input"
-                    type="number"
-                    step="any"
-                    placeholder="80.2707"
-                    value={profileForm.location.lng}
-                    onChange={e => setProfileForm(p => ({ ...p, location: { ...p.location, lng: e.target.value } }))}
-                  />
-                </div>
+              {/* Map-based location picker — replaces manual lat/lng inputs */}
+              <div className="form-group">
+                <LocationPicker
+                  location={profileForm.location}
+                  setLocation={(loc) =>
+                    setProfileForm((p) => ({ ...p, location: loc }))
+                  }
+                  height="240px"
+                  label="My Location *"
+                />
               </div>
 
               <button
@@ -224,7 +309,7 @@ export default function VolunteerPanel() {
           )}
         </div>
 
-        {/* Assignments */}
+        {/* Assignments — unchanged */}
         <div>
           <h2 className="section-title">My Assignments ({assignments.length})</h2>
           {assignments.length === 0 ? (
@@ -232,7 +317,9 @@ export default function VolunteerPanel() {
               <div className="empty-state" style={{ padding: "30px 0" }}>
                 <div className="empty-icon">✦</div>
                 <p className="empty-text">No assignments yet</p>
-                <p className="empty-sub">Make sure your profile is complete and you're set as available</p>
+                <p className="empty-sub">
+                  Make sure your profile is complete and you're set as available
+                </p>
               </div>
             </div>
           ) : (
@@ -248,10 +335,14 @@ export default function VolunteerPanel() {
                   </p>
                   <div className="issue-meta">
                     {a.issueId?.urgency && (
-                      <span className={`badge badge-${a.issueId.urgency}`}>{a.issueId.urgency}</span>
+                      <span className={`badge badge-${a.issueId.urgency}`}>
+                        {a.issueId.urgency}
+                      </span>
                     )}
                     {a.issueId?.type && (
-                      <span className={`badge badge-${a.issueId.type}`}>{a.issueId.type}</span>
+                      <span className={`badge badge-${a.issueId.type}`}>
+                        {a.issueId.type}
+                      </span>
                     )}
                   </div>
 
@@ -272,7 +363,10 @@ export default function VolunteerPanel() {
                   )}
 
                   {a.markedCompleteByVolunteer && !a.verifiedByAdmin && (
-                    <div className="text-xs text-muted" style={{ marginTop: 10, fontFamily: "var(--font-mono)" }}>
+                    <div
+                      className="text-xs text-muted"
+                      style={{ marginTop: 10, fontFamily: "var(--font-mono)" }}
+                    >
                       ⏳ Awaiting admin verification…
                     </div>
                   )}
