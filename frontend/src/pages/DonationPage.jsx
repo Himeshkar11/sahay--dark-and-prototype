@@ -9,8 +9,7 @@ import "./DonationPage.css";
 //    e.g. import qrImage from "../assets/upi-qr.png"
 //    or:  const QR_IMAGE_SRC = "/assets/upi-qr.png";
 // ─────────────────────────────────────────────────────────────
-const QR_IMAGE_SRC = "/assests/upi-qr.png"; // ← replace null with your image src string
-
+const QR_IMAGE_SRC = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=sahay@upi";// ← replace with your real QR code image path
 const UPI_ID = "sahay@upi"; // ← replace with your real UPI ID
 
 const AMOUNTS = [100, 500, 1000, 5000];
